@@ -1,0 +1,238 @@
+
+...................................START.......................................
+
+#DUALBOOT VM :
+https://www.youtube.com/watch?v=Yn91wf9KyqY
+
+#INSTALLATION VIRTUAL BOX :
+sudo su
+
+dnf install VirtualBox
+
+VirtualBox requiert que des modules du noyau soient compilés et chargés. Normalement cela est fait automatiquement, en cas d'erreurs, vous pouvez le faire manuellement, notamment pour comprendre l'origine du problème. Procédez comme suit :
+akmods && systemctl restart systemd-modules-load.service
+
+Pour lancer VirtualBox :
+VirtualBox
+
+
+######CREATION VM AARCH LINUX :
+
+###MISE EN ROUTE DE ARCHLINUX :
+
+Telecharger ISO ARCHLINUX: https://archlinux.fr/telecharger
+Dans VirtualBox select "new"
+name: archlinux
+type: linux
+version: Arch Linux (64-bit)
+(next >)
+memory size: utiliser taille recommande
+(next >)
+hard disk: create a virtual hard disk
+(create)
+Hard disk file type: VHD
+(next >)
+Storage on physical hard disk: dinamically allocated
+(next >)
+File location and size: 50GB
+(create)
+selectionner la vm configurer et cliquer sur la fleche verte (Start)
+selectionner ISO arch linux precedemment telecharger
+(Start)
+
+###CONFIGURATION ARCHLINUX :
+Sur l'ecran ARCHLINUX selectionner la 1ere option
+(attendre)
+arrive sur le prompt rouge
+taper: ping google.com pour verifier que le reseau marche correctement
+CTRL C pour quitter
+selectionner le clavier azerty: "loadkeys fr"
+mettre a jour temps locale pour ARCH LINUX : "timedatectl set-timezone Europe/Paris"
+check avec : "timedatectl to display clock info"
+creation volume groupe pour les nouvelles partitions : "pvcreate /dev/sda1" "vgcreate vg1 /dev/sda1"*
+
+creation des volumes :
+"lvcreate -L 400M -n boot vg1"
+"lvcreate -L 9G -n root vg1"
+"lvcreate -L 500M -n swap vg1"
+"lvcreate -l 5G -n home vg1"
+
+Formatage des volumes :
+"mkfs.ext4 /dev/vg1/root #"root" sda2 == sda6"
+"mkfs.ext4 /dev/vg1/home #"home" sda4 == sda8"
+"mkfs.ext2 /dev/vg1/boot #"boot" sda1 == sda5"
+"mkswap /dev/vg1/swap    #"swap" sda3 == sda7"
+"swapon /dev/vg1/swap"
+
+Monter le disk:
+"mount /dev/vg1/root /mnt"
+"mkdir /mnt/boot /mnt/var /mnt/home"
+"mount /dev/vg1/boot /mnt/boot"
+"mount /dev/vg1/home /mnt/home"
+
+Install Arch-linux:
+"pacman -Syy"
+"pacstrap /mnt base base-devel linux linux-firmware nano emacs dhcpcd net-tools grub"
+
+Configurer le system de base:
+nano /etc/locale.gen
+enlever le '#' devant-> fr_FR.UTF-8 UTF-8
+enlever le '#' devant-> fr_FR@euro ISO-8SO-8859-15
+enlever le '#' devant-> en_GB.UTF-8  UTF-8
+"CTRL S CTRL X"
+
+Generer les modifications:
+"loacale-gen"
+"echo LANG=en_GB.UTF-8 > /etc/locale.conf"
+"export LANG=en_GB.UTF-8"
+"echo KEYMAP=fr > /etc/vconsole.conf"
+"echo KEYMAP=fr >> /etc/locale.conf"
+"ln -s /usr/share/zoneinfo/Europe/Paris /etc/localtime"
+
+Choisir un nom a la machine:
+echo (((NOM)))-pc > /etc/hostname
+
+Mettre en place DHCPCD: (délivre des adresses IP aux équipements qui se connectent sur le réseau)
+"systemctl enable dhcpcd"
+
+Mettre en place mot de passe root:
+passwd root : myweb
+
+Mettre en place utilisateur et mot de passe:
+"useradd -m -g users -G wheel -s /bin/bash romain"
+"passwd romain: myweb"
+"useradd -m -g users -G wheel -s /bin/bash leslie"
+"passwd leslie: myweb"
+
+Mettre en place groupes:
+"groupadd managers"
+"groupadd epitech"
+
+Assigner utilisateurs a leur groupes :
+"usermod -aG managers,epitech romain"
+"usermod -aG adm,epitech leslie"
+
+Tout les droits pour Romain:
+"nano /etc/sudoers"
+ajouter "romain ALL=(ALL) ALL" en dessous de ALL=(ALL) ALL
+
+Install Grub:
+"grub-install /dev/sda"
+"pacman -Sy lvm2"
+"exit"
+
+Preparation pour reboot: (demontage)
+"umount /mnt/boot"
+"umount /mnt/home"
+"umount /mnt"
+"reboot"
+
+Installer environnement XFCe ARCHLINUX:
+"sudo pacman -S --needed xorg"
+"sudo pacman -S --needed xfce4 mousepad parole ristretto thunar-archive-plugin thunar-media-tags-plugin xfce4-battery-plugin xfce4-datetime-plugin xfce4-mount-plugin xfce4-netload-plugin xfce4-notifyd xfce4-pulseaudio-plugin xfce4-screensaver xfce4-taskmanager xfce4-wavelan-plugin xfce4-weather-plugin xfce4-whiskermenu-plugin xfce4-xkb-plugin file-roller network-manager-applet leafpad epdfview galculator lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings capitaine-cursors arc-gtk-theme xdg-user-dirs-gtk"
+"sudo pacman -S --needed xfce4-goodies"
+
+Installer serveur SSH:
+"sudo pacman -Syu"
+"sudo pacman -S openssh"
+"sudo systemctl start sshd"
+verifier status SSH : "sudo systemctl status sshd"
+
+Mettre en place lightdm (LightDM est un gestionnaire de session) et NetworkManager (system network service that manages your network devices and connections)
+"systemctl enable lightdm"
+"systemctl enable NetworkManager"
+reboot
+
+fermer la machine virtuel !
+
+######CREATION VM DEBIAN :
+
+https://www.debian.org/
+cliquer sur telecharger pour recuperer ISO debian
+
+###MISE EN ROUTE DE DEBIAN EN DUALL BOOT :
+aller dans settings->storage
+selectionner 'controller: IDE'
+supprimer ISO archlinux (croix rouge en bas a droite)
+select add optical disk
+choisir ISO DEBIAN telecharger auparavant
+une fois mis en place fermer les parametres et lancer la VM avec la fleche verte (START)
+
+###CONFIGURATION DEBIAN :
+sur l'ecran DEBIAN selectionner 'install'
+langue: 'french langage'
+localisation: "'autre' 'ASIE' puis 'CHINE'"
+clavier: 'fr_FR.UTF-8' 'francais'
+Donner un nom a votre machine Debian : '(NOM)-pc'
+creation mot de passe root : 'myweb'
+
+Creation compte utilisateur :
+name: 'hadrien'
+identifiant: 'hadrien'
+mot de passe : 'myweb'
+
+Allocation disk :
+option : manuel
+aller a 'Espace libre section'->'Cree nouvelle partition'
+
+Num (1) :
+500M (swap)
+logique
+fin
+
+num (2) :
+10G root ext4
+logique
+fin
+
+num (3) :
+5G home ext4
+logique
+fin
+
+num (4) :
+400M boot ext2
+logique
+fin
+
+selectionner 'Fin du paramétrage de cette partition' et 'Terminer le partitionnement et appliquer les changements'
+appliquer les changement sur le disk: 'oui'
+analyse: 'oui'
+inform Debian : 'non'
+
+Choix entre different systemes d'installation :
+selectionner: Cinamon  /  serveur ssh  /  environnement de bureau Debian  /  utilisataires usuels du système
+(decocher GNOME aussi)
+
+Choix de mise en place du bootmanager :
+selectionner : 'oui' et choisir : '/dev/sda'
+Reboot autromatoque de la part de Debian
+Apres reboot.....
+
+Creation groupes:
+"groupadd pedago"
+"groupadd epitech"
+"groupadd students"
+
+Creations utilisateurs et mot de passe:
+"useradd -m -g users -G epitech -s /bin/bash hadrien"
+"passwd hadrien"
+"useradd -m -g users -G epitech -s /bin/bash vincent"
+"passwd vincent"
+"useradd -m -g users -G epitech -s /bin/bash luc"
+"passwd luc"
+
+Assigner utilisateurs a leur groupes:
+"usermod -aG pedago,epitech hadrien"
+"usermod -aG pedago,epitech vincent"
+"usermod -aG students,epitech luc"
+
+Mise en place des droits Superutilisateur pour le groupe 'pedago'
+enter "nano /etc/sudoers"
+aller a la ligne "ALL=(ALL) ALL"
+en dessous entrer "%pedago ALL=(ALL) ALL"
+CTRL S CTRL X
+
+REBOOT
+
+......................................END......................................
